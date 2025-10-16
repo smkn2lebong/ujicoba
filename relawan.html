@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Relawan URC JKN - With WhatsApp</title>
+    <title>Relawan URC JKN - With WhatsApp Fixed</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -250,9 +250,9 @@
             <div class="mt-3 p-3 bg-light rounded">
                 <small class="text-muted">
                     <i class="fas fa-info-circle me-1"></i>
-                    Saat ini notifikasi dikirim ke: <strong>082281115991</strong>
+                    Saat ini notifikasi dikirim ke: <strong>6282281115991</strong>
                     <br>
-                    <em>Untuk testing - nanti bisa diganti dengan nomor admin sebenarnya</em>
+                    <em>Format: 62xxx (WhatsApp international format)</em>
                 </small>
             </div>
         </div>
@@ -577,7 +577,7 @@
             // Format pesan WhatsApp
             const message = formatWhatsAppMessage(formData);
             
-            // Nomor admin (SEMENTARA pakai nomor Anda untuk testing)
+            // Nomor admin (format international)
             const adminNumber = '6282281115991'; // 🔧 GANTI NANTI DENGAN NOMOR ADMIN
             
             // Encode message untuk URL
@@ -628,17 +628,11 @@
             return message;
         }
 
-        // AUTO WHATSAPP AFTER SUBMIT
+        // AUTO WHATSAPP AFTER SUBMIT - FIXED VERSION
         function setupAutoWhatsApp() {
-            const originalSubmitHandler = document.getElementById('ajuanForm').onsubmit;
-            
             document.getElementById('ajuanForm').onsubmit = async function(e) {
                 e.preventDefault();
                 
-                // Simpan reference ke this
-                const form = this;
-                
-                // Submit form seperti biasa (dengan logic yang sudah ada)
                 try {
                     const submitBtn = document.getElementById('submitBtn');
                     const originalText = submitBtn.innerHTML;
@@ -665,8 +659,15 @@
                     const result = await URC_API.savePengajuan(formData);
                     
                     if (result.status === 'success') {
-                        // Reset form
-                        form.reset();
+                        // 🔧 TANYA WHATSAPP DULU, BARU RESET FORM
+                        const userWantsWhatsApp = confirm('✅ Ajuan berhasil dikirim! \n\nKirim notifikasi ke admin via WhatsApp?');
+                        
+                        if (userWantsWhatsApp) {
+                            openWhatsAppReport(); // Data masih ada di form
+                        }
+                        
+                        // RESET FORM SETELAH KONFIRMASI WHATSAPP
+                        this.reset();
                         const today = new Date().toISOString().split('T')[0];
                         document.getElementById('tglMasuk').value = today;
                         
@@ -675,13 +676,6 @@
                             loadRiwayat();
                             loadDaftarRelawan();
                         }, 1000);
-                        
-                        // Tanya apakah ingin kirim WhatsApp
-                        setTimeout(() => {
-                            if (confirm('✅ Ajuan berhasil dikirim! \n\nKirim notifikasi ke admin via WhatsApp?')) {
-                                openWhatsAppReport();
-                            }
-                        }, 1500);
                         
                     } else {
                         alert('❌ Gagal: ' + (result.message || 'Unknown error'));
@@ -696,12 +690,6 @@
                 }
             };
         }
-
-        // Form handler manual (backup)
-        document.getElementById('ajuanForm').addEventListener('submit', async function(e) {
-            // Handler sudah diambil alih oleh setupAutoWhatsApp()
-            // Function ini tetap ada untuk compatibility
-        });
 
         // Debug function
         async function debugRiwayat() {
