@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistem URC JKN - Simple Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .role-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .btn-role {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 text-center mb-4">
+                <h1 class="text-white display-4 fw-bold">SISTEM URC JKN</h1>
+                <p class="text-white lead">Unit Reaksi Cepat Jaminan Kesehatan Nasional</p>
+                
+                <div class="alert alert-info">
+                    <h6 id="systemStatus">Mengecek status sistem...</h6>
+                </div>
+            </div>
+            
+            <div class="col-md-5 mb-4">
+                <div class="role-card">
+                    <div class="text-primary" style="font-size: 4rem;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Relawan</h3>
+                    <p class="text-muted">Form pengajuan pasien dan tracking status</p>
+                    <a href="relawan.html" class="btn btn-role w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>Masuk sebagai Relawan
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-5 mb-4">
+                <div class="role-card">
+                    <div class="text-success" style="font-size: 4rem;">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3>Admin</h3>
+                    <p class="text-muted">Management pengajuan dan verifikasi</p>
+                    <a href="admin.html" class="btn btn-role w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>Masuk sebagai Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple status check
+        async function checkStatus() {
+            const statusElement = document.getElementById('systemStatus');
+            
+            try {
+                const response = await fetch('https://script.google.com/macros/s/AKfycbxPTZY4qDtAQANSBVRFQfaf3NakkY00wDOtQXic8I1PvLPu9TffgEn9An1Uny1L3xK6WA/exec?action=test');
+                const result = await response.text();
+                
+                statusElement.innerHTML = '<i class="fas fa-check-circle me-2"></i>Sistem Online - Terhubung ke Cloud';
+                statusElement.className = 'alert alert-success';
+                
+            } catch (error) {
+                statusElement.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Sistem Offline - Periksa Koneksi Internet';
+                statusElement.className = 'alert alert-warning';
+            }
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin URC JKN - With Copy Data</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .card { border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: none; }
+        .btn-primary { background: linear-gradient(90deg,#28a745,#20c997); border: none; }
+        .btn-copy { background: #6f42c1; color: white; border: none; }
+        .btn-copy:hover { background: #5a32a3; color: white; }
+        .btn-detail { background: #fd7e14; color: white; border: none; }
+        .btn-detail:hover { background: #e56a00; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Admin URC JKN - Dashboard</h3>
+            <a href="index.html" class="btn btn-secondary btn-sm">← Kembali</a>
+        </div>
+
+        <!-- Statistik -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h5 id="totalPending">0</h5>
+                        <p>Pending</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h5 id="totalDiproses">0</h5>
+                        <p>Diproses</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h5 id="totalSelesai">0</h5>
+                        <p>Selesai</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body text-center">
+                        <h5 id="totalDitolak">0</h5>
+                        <p>Ditolak</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daftar Pengajuan -->
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Daftar Pengajuan</h5>
+                <button class="btn btn-primary btn-sm" onclick="loadData()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Nama Pasien</th>
+                            <th>No HP</th>
+                            <th>Relawan</th>
+                            <th>Status</th>
+                            <th width="280">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ALASAN PENOLAKAN -->
+    <div class="modal fade" id="modalTolak" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Alasan Penolakan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Masukkan alasan penolakan:</label>
+                        <textarea class="form-control" id="alasanTolak" rows="4" placeholder="Contoh: Data tidak lengkap, surat tidak mampu belum ada, dll."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" onclick="submitPenolakan()">
+                        <i class="fas fa-times me-1"></i>Tolak Pengajuan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL DATA & COPY -->
+    <div class="modal fade" id="modalDetail" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>Detail Data Pasien
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detailContent">
+                        <!-- Data detail akan diisi JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-success" onclick="copyAllData()">
+                        <i class="fas fa-copy me-1"></i>Salin Semua Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="copyToast" class="toast" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Berhasil!</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Data berhasil disalin ke clipboard!
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script>
+        let currentTolakId = null;
+        let currentDetailData = null;
+        let modalTolak = null;
+        let modalDetail = null;
+        let copyToast = null;
+
+        // Simple Admin Dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Admin dengan Copy Data Loaded');
+            modalTolak = new bootstrap.Modal(document.getElementById('modalTolak'));
+            modalDetail = new bootstrap.Modal(document.getElementById('modalDetail'));
+            copyToast = new bootstrap.Toast(document.getElementById('copyToast'));
+            loadData();
+        });
+
+        async function loadData() {
+            const tbody = document.getElementById('dataTable');
+            
+            try {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Memuat data...</td></tr>';
+                
+                const result = await URC_API.getAllData();
+                console.log('Admin data result:', result);
+                
+                if (result.status === 'success') {
+                    displayData(result.data);
+                    updateStats(result.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error: ' + result.message + '</td></tr>';
+                }
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>';
+                console.error('Admin load error:', error);
+            }
+        }
+
+        function displayData(data) {
+            const tbody = document.getElementById('dataTable');
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada pengajuan</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(item => {
+                const statusBadge = item.status === 'pending' ? 'bg-warning' : 
+                                  item.status === 'diproses' ? 'bg-info' :
+                                  item.status === 'selesai' ? 'bg-success' : 'bg-danger';
+                
+                html += `
+                    <tr>
+                        <td>${item.tanggalAjuan}</td>
+                        <td><strong>${item.nama}</strong></td>
+                        <td>${item.noHP}</td>
+                        <td>${item.relawan}</td>
+                        <td><span class="badge ${statusBadge}">${item.status.toUpperCase()}</span></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="updateStatus('${item.id}', 'diproses')" ${item.status !== 'pending' ? 'disabled' : ''} title="Proses">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <button class="btn btn-outline-success" onclick="updateStatus('${item.id}', 'selesai')" ${item.status === 'selesai' ? 'disabled' : ''} title="Selesai">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="bukaModalTolak('${item.id}')" ${item.status === 'ditolak' ? 'disabled' : ''} title="Tolak">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <button class="btn btn-detail" onclick="bukaModalDetail('${item.id}')" title="Lihat Detail">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-copy" onclick="copyDataQuick('${item.id}')" title="Salin Data">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function updateStats(data) {
+            const pending = data.filter(d => d.status === 'pending').length;
+            const diproses = data.filter(d => d.status === 'diproses').length;
+            const selesai = data.filter(d => d.status === 'selesai').length;
+            const ditolak = data.filter(d => d.status === 'ditolak').length;
+
+            document.getElementById('totalPending').textContent = pending;
+            document.getElementById('totalDiproses').textContent = diproses;
+            document.getElementById('totalSelesai').textContent = selesai;
+            document.getElementById('totalDitolak').textContent = ditolak;
+        }
+
+        async function updateStatus(id, status) {
+            if (!confirm(`Update status menjadi: ${status.toUpperCase()}?`)) return;
+            
+            try {
+                const result = await URC_API.updateStatus(id, status);
+                alert('✅ Status berhasil diupdate!');
+                loadData();
+            } catch (error) {
+                alert('❌ Gagal update status: ' + error.message);
+            }
+        }
+
+        // BUKA MODAL TOLAK
+        function bukaModalTolak(id) {
+            currentTolakId = id;
+            document.getElementById('alasanTolak').value = '';
+            modalTolak.show();
+        }
+
+        // SUBMIT PENOLAKAN
+        async function submitPenolakan() {
+            const alasan = document.getElementById('alasanTolak').value.trim();
+            
+            if (!alasan) {
+                alert('❌ Harap isi alasan penolakan!');
+                return;
+            }
+
+            try {
+                const result = await URC_API.updateStatus(currentTolakId, 'ditolak', alasan);
+                alert('✅ Pengajuan telah ditolak!');
+                modalTolak.hide();
+                loadData();
+            } catch (error) {
+                alert('❌ Gagal menolak pengajuan: ' + error.message);
+            }
+        }
+
+        // BUKA MODAL DETAIL
+        function bukaModalDetail(id) {
+            const allData = JSON.parse(localStorage.getItem('allData') || '[]');
+            const data = allData.find(item => item.id === id);
+            
+            if (!data) {
+                alert('Data tidak ditemukan!');
+                return;
+            }
+
+            currentDetailData = data;
+            
+            // Tampilkan detail data
+            const content = document.getElementById('detailContent');
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Nama Pasien:</strong><br>${data.nama}</p>
+                        <p><strong>No KK:</strong><br>${data.noKK}</p>
+                        <p><strong>No NIK:</strong><br>${data.noNIK}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>No HP:</strong><br>${data.noHP}</p>
+                        <p><strong>Puskesmas:</strong><br>${data.puskesmas}</p>
+                        <p><strong>Relawan:</strong><br>${data.relawan}</p>
+                    </div>
+                </div>
+                <p><strong>Alamat:</strong><br>${data.alamat}</p>
+                <p><strong>Diagnosa:</strong><br>${data.diagnosa}</p>
+                <p><strong>Tanggal Masuk RS:</strong><br>${data.tglMasuk}</p>
+                <p><strong>Surat Tidak Mampu:</strong><br>${data.suratMampu}</p>
+                <p><strong>Surat Rawat Inap:</strong><br>${data.suratRawat}</p>
+                ${data.linkDrive ? `<p><strong>Link Drive:</strong><br><a href="${data.linkDrive}" target="_blank">${data.linkDrive}</a></p>` : ''}
+                <p><strong>Status:</strong><br><span class="badge bg-${data.status === 'pending' ? 'warning' : data.status === 'diproses' ? 'info' : data.status === 'selesai' ? 'success' : 'danger'}">${data.status.toUpperCase()}</span></p>
+                ${data.alasan ? `<p><strong>Alasan Penolakan:</strong><br>${data.alasan}</p>` : ''}
+            `;
+            
+            modalDetail.show();
+        }
+
+        // COPY DATA QUICK (tanpa buka modal)
+        function copyDataQuick(id) {
+            const allData = JSON.parse(localStorage.getItem('allData') || '[]');
+            const data = allData.find(item => item.id === id);
+            
+            if (!data) {
+                alert('Data tidak ditemukan!');
+                return;
+            }
+
+            const formattedData = `
+DATA PASIEN URC JKN
+==============================
+📋 INFORMASI PASIEN
+• Nama Lengkap: ${data.nama}
+• No. KK: ${data.noKK}
+• No. NIK: ${data.noNIK}
+• No. HP: ${data.noHP}
+• Alamat: ${data.alamat}
+
+🏥 INFORMASI KESEHATAN  
+• Puskesmas Terdekat: ${data.puskesmas}
+• Tanggal Masuk RS: ${data.tglMasuk}
+• Diagnosa: ${data.diagnosa}
+
+📄 DOKUMEN PENDUKUNG
+• Surat Tidak Mampu: ${data.suratMampu}
+• Surat Rawat Inap: ${data.suratRawat}
+${data.linkDrive ? `• Link Drive: ${data.linkDrive}` : ''}
+
+👥 INFORMASI RELAWAN
+• Nama Relawan: ${data.relawan}
+• Tanggal Pengajuan: ${data.tanggalAjuan}
+• Status: ${data.status.toUpperCase()}
+${data.alasan ? `• Alasan: ${data.alasan}` : ''}
+==============================
+*Data dari Sistem URC JKN - ${new Date().toLocaleDateString('id-ID')}*
+            `.trim();
+
+            navigator.clipboard.writeText(formattedData).then(() => {
+                document.getElementById('toastMessage').textContent = 'Data berhasil disalin!';
+                copyToast.show();
+            }).catch(err => {
+                alert('Gagal menyalin data. Silakan coba lagi.');
+            });
+        }
+
+        // COPY ALL DATA DARI MODAL
+        function copyAllData() {
+            if (!currentDetailData) return;
+            
+            const formattedData = `
+DATA PASIEN URC JKN
+==============================
+📋 INFORMASI PASIEN
+• Nama Lengkap: ${currentDetailData.nama}
+• No. KK: ${currentDetailData.noKK}
+• No. NIK: ${currentDetailData.noNIK}
+• No. HP: ${currentDetailData.noHP}
+• Alamat: ${currentDetailData.alamat}
+
+🏥 INFORMASI KESEHATAN  
+• Puskesmas Terdekat: ${currentDetailData.puskesmas}
+• Tanggal Masuk RS: ${currentDetailData.tglMasuk}
+• Diagnosa: ${currentDetailData.diagnosa}
+
+📄 DOKUMEN PENDUKUNG
+• Surat Tidak Mampu: ${currentDetailData.suratMampu}
+• Surat Rawat Inap: ${currentDetailData.suratRawat}
+${currentDetailData.linkDrive ? `• Link Drive: ${currentDetailData.linkDrive}` : ''}
+
+👥 INFORMASI RELAWAN
+• Nama Relawan: ${currentDetailData.relawan}
+• Tanggal Pengajuan: ${currentDetailData.tanggalAjuan}
+• Status: ${currentDetailData.status.toUpperCase()}
+${currentDetailData.alasan ? `• Alasan: ${currentDetailData.alasan}` : ''}
+==============================
+*Data dari Sistem URC JKN - ${new Date().toLocaleDateString('id-ID')}*
+            `.trim();
+
+            navigator.clipboard.writeText(formattedData).then(() => {
+                document.getElementById('toastMessage').textContent = 'Semua data berhasil disalin!';
+                copyToast.show();
+            }).catch(err => {
+                alert('Gagal menyalin data. Silakan coba lagi.');
+            });
+        }
+
+        // Simpan data ke localStorage untuk akses cepat
+        async function loadData() {
+            const tbody = document.getElementById('dataTable');
+            
+            try {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Memuat data...</td></tr>';
+                
+                const result = await URC_API.getAllData();
+                console.log('Admin data result:', result);
+                
+                if (result.status === 'success') {
+                    // Simpan data ke localStorage untuk copy data
+                    localStorage.setItem('allData', JSON.stringify(result.data));
+                    
+                    displayData(result.data);
+                    updateStats(result.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error: ' + result.message + '</td></tr>';
+                }
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>';
+                console.error('Admin load error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

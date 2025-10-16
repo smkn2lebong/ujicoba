@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Relawan URC JKN - Fixed Version</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background: linear-gradient(135deg,#f0f2f5,#e2e8f0); 
+            font-family:'Segoe UI', sans-serif; 
+            min-height: 100vh;
+        }
+        header{ 
+            background: linear-gradient(90deg,#4f46e5,#3b82f6); 
+            color:white; 
+            padding:1.5rem; 
+            text-align:center; 
+            border-radius:0 0 25px 25px; 
+            margin-bottom:2rem; 
+        }
+        .card-form{ 
+            border-radius:16px; 
+            box-shadow:0 8px 30px rgba(0,0,0,0.08); 
+            border:none; 
+            background:white; 
+            margin-bottom:2rem; 
+        }
+        .floating-label{ 
+            position:relative; 
+            margin-bottom:1.5rem; 
+        }
+        .floating-input{ 
+            font-size:16px; 
+            padding:1.5rem 0.75rem 0.5rem; 
+            display:block; 
+            width:100%; 
+            border:1px solid #ced4da; 
+            border-radius:0.375rem; 
+            background:transparent; 
+        }
+        .floating-label-text{ 
+            color:#64748b; 
+            font-size:16px; 
+            position:absolute; 
+            left:12px; 
+            top:12px; 
+            pointer-events:none; 
+            transition:0.2s; 
+        }
+        .floating-input:focus ~ .floating-label-text, 
+        .floating-input:not(:placeholder-shown) ~ .floating-label-text{ 
+            top:2px; 
+            left:8px; 
+            font-size:12px; 
+            color:#4f46e5; 
+            font-weight:500; 
+        }
+        .btn-primary{ 
+            background: linear-gradient(90deg,#4f46e5,#3b82f6); 
+            border:none; 
+            font-weight:600; 
+            padding:0.75rem; 
+        }
+        .status-pending { color: #f59e0b; font-weight: bold; }
+        .status-diproses { color: #3b82f6; font-weight: bold; }
+        .status-ditolak { color: #ef4444; font-weight: bold; }
+        .status-selesai { color: #10b981; font-weight: bold; }
+        .relawan-badge {
+            background: #4f46e5;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            margin-left: 1rem;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">URC JKN - Relawan</h1>
+                    <p class="mb-0 mt-2" id="headerRelawanInfo">
+                        Formulir Ajuan Pasien Relawan
+                    </p>
+                </div>
+                <div>
+                    <a href="index.html" class="btn btn-light btn-sm me-2">
+                        <i class="fas fa-home me-1"></i>Halaman Utama
+                    </a>
+                    <button class="btn btn-warning btn-sm" onclick="changeRelawan()">
+                        <i class="fas fa-user-edit me-1"></i>Ganti Relawan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Info Relawan Aktif -->
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-user me-2"></i>
+                <strong>Relawan Aktif:</strong>
+                <span id="currentRelawanName">-</span>
+            </div>
+            <small class="text-muted">Riwayat akan otomatis tampil</small>
+        </div>
+
+        <!-- Form Pengajuan -->
+        <div class="card card-form p-4">
+            <h4 class="mb-4">
+                <i class="fas fa-edit me-2"></i>Form Pengajuan Pasien Baru
+            </h4>
+            <form id="ajuanForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="floating-label">
+                            <input type="text" class="floating-input" id="pasienNama" placeholder=" " required>
+                            <label class="floating-label-text">Nama Pasien</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="floating-label">
+                            <input type="number" class="floating-input" id="pasienKK" placeholder=" " oninput="if(this.value.length>16)this.value=this.value.slice(0,16);" required>
+                            <label class="floating-label-text">No KK (16 digit)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="floating-label">
+                            <input type="number" class="floating-input" id="pasienNIK" placeholder=" " oninput="if(this.value.length>16)this.value=this.value.slice(0,16);" required>
+                            <label class="floating-label-text">No NIK (16 digit)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="floating-label">
+                            <input type="number" class="floating-input" id="pasienHP" placeholder=" " oninput="if(this.value.length>13)this.value=this.value.slice(0,13);" required>
+                            <label class="floating-label-text">No HP (11–13 digit)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="floating-label">
+                    <input type="text" class="floating-input" id="pasienAlamat" placeholder=" " required>
+                    <label class="floating-label-text">Alamat Lengkap</label>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="floating-label">
+                            <input type="text" class="floating-input" id="puskesmas" placeholder=" " required>
+                            <label class="floating-label-text">Puskesmas Terdekat</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- NAMA RELAWAN AKAN DIISI OTOMATIS -->
+                        <div class="floating-label">
+                            <input type="text" class="floating-input" id="relawan" placeholder=" " readonly style="background-color: #f8f9fa;">
+                            <label class="floating-label-text">Nama Relawan</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="floating-label">
+                    <input type="date" class="floating-input" id="tglMasuk" required>
+                    <label class="floating-label-text">Tanggal Masuk RS</label>
+                </div>
+
+                <div class="floating-label">
+                    <textarea class="floating-input" id="diagnosa" placeholder=" " style="height:100px" required></textarea>
+                    <label class="floating-label-text">Diagnosa Penyakit</label>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Surat Tidak Mampu</label>
+                        <select class="form-select mb-3" id="suratMampu">
+                            <option>Ada</option>
+                            <option>Menyusul</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Surat Rawat Inap</label>
+                        <select class="form-select mb-3" id="suratRawat">
+                            <option>Ada</option>
+                            <option>Menyusul</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="floating-label">
+                    <input type="url" class="floating-input" id="linkDrive" placeholder=" ">
+                    <label class="floating-label-text">Link Google Drive (opsional)</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-3" id="submitBtn">
+                    <i class="fas fa-paper-plane me-2"></i>Kirim Ajuan
+                </button>
+            </form>
+        </div>
+
+        <!-- Riwayat Pengajuan -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">
+                <i class="fas fa-history me-2"></i>Riwayat Pengajuan 
+                <span class="relawan-badge" id="riwayatRelawanBadge">-</span>
+            </h4>
+            <div>
+                <button class="btn btn-outline-info btn-sm me-2" onclick="debugRiwayat()">
+                    <i class="fas fa-bug me-1"></i>Debug
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadRiwayat()" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="card card-form p-4">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Nama Pasien</th>
+                            <th>Puskesmas</th>
+                            <th>Status</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="riwayatTable">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                Pilih relawan terlebih dahulu
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ganti Relawan -->
+    <div class="modal fade" id="relawanModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pilih Relawan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Relawan:</label>
+                        <input type="text" class="form-control" id="newRelawan" placeholder="Masukkan nama relawan" list="relawanList" required>
+                        <datalist id="relawanList">
+                            <!-- Auto-filled from database -->
+                        </datalist>
+                        <div class="form-text">Pilih dari daftar atau ketik nama baru</div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            Pastikan nama sama persis dengan sebelumnya untuk melihat riwayat
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRelawan()">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script>
+        // ONLINE RELAWAN SYSTEM - FIXED VERSION
+        let currentRelawan = '';
+        let relawanModal = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Relawan Fixed System Loaded');
+            relawanModal = new bootstrap.Modal(document.getElementById('relawanModal'));
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tglMasuk').value = today;
+            
+            // Initialize relawan system
+            initializeRelawanSystem();
+        });
+
+        function initializeRelawanSystem() {
+            // Cek URL parameters pertama
+            const urlParams = new URLSearchParams(window.location.search);
+            const relawanFromUrl = urlParams.get('relawan');
+            
+            // Cek sessionStorage (hanya untuk session ini)
+            const relawanFromSession = sessionStorage.getItem('current_relawan');
+            
+            if (relawanFromUrl) {
+                // Priority 1: URL Parameter
+                setCurrentRelawan(relawanFromUrl);
+                updateURL(relawanFromUrl);
+            } else if (relawanFromSession) {
+                // Priority 2: Session Storage
+                setCurrentRelawan(relawanFromSession);
+            } else {
+                // Priority 3: Show modal
+                setTimeout(() => relawanModal.show(), 500);
+            }
+            
+            // Load daftar relawan untuk autocomplete
+            loadDaftarRelawan();
+        }
+
+        function setCurrentRelawan(relawanName) {
+            currentRelawan = relawanName.trim();
+            
+            // Update UI
+            document.getElementById('relawan').value = currentRelawan;
+            document.getElementById('currentRelawanName').textContent = currentRelawan;
+            document.getElementById('riwayatRelawanBadge').textContent = currentRelawan;
+            
+            // Save to session storage
+            sessionStorage.setItem('current_relawan', currentRelawan);
+            
+            // Update URL tanpa reload
+            updateURL(currentRelawan);
+            
+            // Auto-load riwayat
+            setTimeout(() => loadRiwayat(), 1000);
+        }
+
+        function updateURL(relawanName) {
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('relawan', relawanName);
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        function changeRelawan() {
+            document.getElementById('newRelawan').value = currentRelawan;
+            relawanModal.show();
+        }
+
+        function saveRelawan() {
+            const newRelawan = document.getElementById('newRelawan').value.trim();
+            if (!newRelawan) {
+                alert('Harap isi nama relawan!');
+                return;
+            }
+            
+            setCurrentRelawan(newRelawan);
+            relawanModal.hide();
+        }
+
+        async function loadDaftarRelawan() {
+            try {
+                console.log('🔄 Loading daftar relawan...');
+                const result = await URC_API.getAllData();
+                if (result.status === 'success' && result.data) {
+                    // Ambil semua nama relawan unik
+                    const relawanList = [...new Set(result.data
+                        .filter(item => item.relawan && item.relawan.trim() !== '')
+                        .map(item => item.relawan.trim())
+                        .sort())];
+                    
+                    console.log('📋 Daftar relawan ditemukan:', relawanList);
+                    
+                    const datalist = document.getElementById('relawanList');
+                    datalist.innerHTML = relawanList.map(relawan => 
+                        `<option value="${relawan}">`
+                    ).join('');
+                }
+            } catch (error) {
+                console.log('❌ Gagal load daftar relawan:', error);
+            }
+        }
+
+        // FIXED LOAD RIWAYAT FUNCTION
+        async function loadRiwayat() {
+            if (!currentRelawan) {
+                document.getElementById('riwayatTable').innerHTML = 
+                    '<tr><td colspan="5" class="text-center text-muted">Pilih relawan terlebih dahulu</td></tr>';
+                return;
+            }
+
+            const tbody = document.getElementById('riwayatTable');
+            const refreshBtn = document.getElementById('refreshBtn');
+            
+            refreshBtn.innerHTML = '<div class="loading-spinner me-1"></div> Loading...';
+            refreshBtn.disabled = true;
+
+            try {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Memuat data...</td></tr>';
+                
+                console.log('🔄 Loading riwayat untuk:', currentRelawan);
+                
+                // GUNAKAN ENHANCED METHOD DARI config.js
+                const result = await URC_API.getDataByRelawanEnhanced(currentRelawan);
+                console.log('📊 Enhanced result:', result);
+                
+                if (result.status === 'success' && result.data) {
+                    const filteredData = result.data;
+                    console.log('✅ Data ditemukan:', filteredData.length + ' items');
+                    
+                    if (filteredData.length > 0) {
+                        let html = '';
+                        // Sort by latest first
+                        filteredData.sort((a, b) => {
+                            const dateA = new Date(a.timestamp || a.tanggalAjuan || 0);
+                            const dateB = new Date(b.timestamp || b.tanggalAjuan || 0);
+                            return dateB - dateA;
+                        });
+                        
+                        filteredData.forEach((item, index) => {
+                            const statusClass = item.status === 'pending' ? 'status-pending' : 
+                                              item.status === 'diproses' ? 'status-diproses' :
+                                              item.status === 'selesai' ? 'status-selesai' : 'status-ditolak';
+                            
+                            const statusText = item.status === 'pending' ? 'MENUNGGU' :
+                                             item.status === 'diproses' ? 'DIPROSES' :
+                                             item.status === 'selesai' ? 'SELESAI' : 'DITOLAK';
+                            
+                            html += `
+                                <tr>
+                                    <td>${item.tanggalAjuan || '-'}</td>
+                                    <td><strong>${item.nama || '-'}</strong></td>
+                                    <td>${item.puskesmas || '-'}</td>
+                                    <td><span class="${statusClass}">${statusText}</span></td>
+                                    <td>${item.alasan || '-'}</td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                        console.log('🎉 Riwayat berhasil ditampilkan!');
+                    } else {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    <div class="mb-2">
+                                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                        <div>Belum ada pengajuan untuk relawan "<strong>${currentRelawan}</strong>"</div>
+                                    </div>
+                                    <small class="text-info">
+                                        Data akan muncul setelah Anda mengajukan pasien pertama kali
+                                    </small>
+                                </td>
+                            </tr>
+                        `;
+                        console.log('ℹ️ Tidak ada data untuk relawan:', currentRelawan);
+                    }
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center text-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Gagal memuat data dari server
+                                <br><small>Status: ${result?.status || 'unknown'}</small>
+                            </td>
+                        </tr>
+                    `;
+                    console.error('❌ Gagal mengambil data:', result);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading riwayat:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <small>Error: ${error.message}</small>
+                            <br><small>Periksa koneksi internet dan coba refresh</small>
+                        </td>
+                    </tr>
+                `;
+            } finally {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+                refreshBtn.disabled = false;
+            }
+        }
+
+        // Form handler
+        document.getElementById('ajuanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!currentRelawan) {
+                alert('Pilih relawan terlebih dahulu!');
+                relawanModal.show();
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            const formData = {
+                nama: document.getElementById('pasienNama').value.trim(),
+                noKK: document.getElementById('pasienKK').value.trim(),
+                noNIK: document.getElementById('pasienNIK').value.trim(),
+                noHP: document.getElementById('pasienHP').value.trim(),
+                alamat: document.getElementById('pasienAlamat').value.trim(),
+                puskesmas: document.getElementById('puskesmas').value.trim(),
+                relawan: currentRelawan, // PAKAI CURRENT RELAWAN
+                tglMasuk: document.getElementById('tglMasuk').value,
+                diagnosa: document.getElementById('diagnosa').value.trim(),
+                suratMampu: document.getElementById('suratMampu').value,
+                suratRawat: document.getElementById('suratRawat').value,
+                linkDrive: document.getElementById('linkDrive').value.trim(),
+                status: 'pending'
+            };
+
+            // Validation
+            if (!formData.nama || !formData.noKK || !formData.noNIK) {
+                alert('Harap isi semua field yang wajib!');
+                return;
+            }
+
+            if (formData.noKK.length !== 16) {
+                alert('No KK harus 16 digit!');
+                return;
+            }
+
+            if (formData.noNIK.length !== 16) {
+                alert('No NIK harus 16 digit!');
+                return;
+            }
+
+            try {
+                submitBtn.innerHTML = '<div class="loading-spinner me-2"></div> Mengirim...';
+                submitBtn.disabled = true;
+
+                console.log('📤 Mengirim data:', formData);
+                const result = await URC_API.savePengajuan(formData);
+                
+                if (result.status === 'success') {
+                    alert('✅ Ajuan berhasil dikirim!');
+                    this.reset();
+                    
+                    // Reset date to today
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('tglMasuk').value = today;
+                    
+                    // Reload riwayat & daftar relawan
+                    setTimeout(() => {
+                        loadRiwayat();
+                        loadDaftarRelawan();
+                    }, 1000);
+                } else {
+                    alert('❌ Gagal: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Submit error:', error);
+                alert('❌ Error: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Debug function
+        async function debugRiwayat() {
+            if (!currentRelawan) {
+                alert('Pilih relawan dulu!');
+                return;
+            }
+            
+            console.clear();
+            console.log('🐛 DEBUG MODE - RELAWAN SYSTEM');
+            console.log('================================');
+            console.log('1. CURRENT RELAWAN:', currentRelawan);
+            console.log('2. URL Params:', new URLSearchParams(window.location.search).get('relawan'));
+            console.log('3. Session Storage:', sessionStorage.getItem('current_relawan'));
+            
+            console.log('\n4. TESTING API...');
+            try {
+                // Test connection
+                const connection = await URC_API.testConnection();
+                console.log('🔗 Connection:', connection);
+                
+                // Test all data
+                console.log('\n5. TESTING ALL DATA...');
+                const allData = await URC_API.getAllData();
+                console.log('📊 All Data Result:', allData);
+                
+                if (allData.status === 'success' && allData.data) {
+                    const relawanList = [...new Set(allData.data
+                        .filter(item => item.relawan)
+                        .map(item => item.relawan))];
+                    console.log('👥 Daftar Relawan di System:', relawanList);
+                    
+                    // Cek data untuk relawan saat ini
+                    const currentRelawanData = allData.data.filter(item => 
+                        item.relawan && item.relawan.toString().trim().toLowerCase() === currentRelawan.toLowerCase()
+                    );
+                    console.log(`📋 Data untuk ${currentRelawan}:`, currentRelawanData.length + ' items');
+                    console.log('📄 Detail data:', currentRelawanData);
+                }
+                
+                // Test specific relawan data
+                console.log('\n6. TESTING RELAWAN DATA...');
+                const relawanData = await URC_API.getDataByRelawan(currentRelawan);
+                console.log('🎯 Relawan Data Result:', relawanData);
+                
+                console.log('\n7. TESTING ENHANCED METHOD...');
+                const enhancedData = await URC_API.getDataByRelawanEnhanced(currentRelawan);
+                console.log('🚀 Enhanced Result:', enhancedData);
+                
+            } catch (error) {
+                console.error('❌ Debug Error:', error);
+            }
+            
+            alert('Debug selesai! Lihat console (F12) untuk detail.');
+        }
+
+        // Export function untuk external access
+        window.loadRiwayat = loadRiwayat;
+        window.debugRiwayat = debugRiwayat;
+        window.changeRelawan = changeRelawan;
+    </script>
+</body>
+</html>
