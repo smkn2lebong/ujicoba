@@ -578,13 +578,13 @@
             const message = formatWhatsAppMessage(formData);
             
             // Nomor admin (SEMENTARA pakai nomor Anda untuk testing)
-            const adminNumber = '082281115991'; // 🔧 GANTI NANTI DENGAN NOMOR ADMIN
+            const adminNumber = '6282281115991'; // 🔧 GANTI NANTI DENGAN NOMOR ADMIN
             
             // Encode message untuk URL
             const encodedMessage = encodeURIComponent(message);
             
             // Buat WhatsApp URL
-            const whatsappUrl = `https://wa.me/${6282281115991}?text=${encodedMessage}`;
+            const whatsappUrl = `https://wa.me/${adminNumber}?text=${encodedMessage}`;
             
             // Buka WhatsApp
             console.log('📤 Membuka WhatsApp dengan pesan:', message);
