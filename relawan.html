@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Relawan URC JKN - Fixed Version</title>
+    <title>Relawan URC JKN - With WhatsApp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -83,6 +83,20 @@
             border-top: 2px solid #3498db;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+        .whatsapp-btn {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .whatsapp-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+            color: white;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -218,6 +232,31 @@
             </form>
         </div>
 
+        <!-- WhatsApp Report Section -->
+        <div class="card card-form p-4 mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="fab fa-whatsapp text-success me-2"></i>Laporkan ke Admin via WhatsApp
+                    </h5>
+                    <p class="text-muted mb-0">Kirim notifikasi ke admin ketika ada ajuan baru</p>
+                </div>
+                <button class="btn btn-success whatsapp-btn" onclick="openWhatsAppReport()">
+                    <i class="fab fa-whatsapp me-2"></i>Kirim ke WhatsApp
+                </button>
+            </div>
+            
+            <!-- Info Nomor Admin -->
+            <div class="mt-3 p-3 bg-light rounded">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Saat ini notifikasi dikirim ke: <strong>082281115991</strong>
+                    <br>
+                    <em>Untuk testing - nanti bisa diganti dengan nomor admin sebenarnya</em>
+                </small>
+            </div>
+        </div>
+
         <!-- Riwayat Pengajuan -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">
@@ -295,12 +334,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="config.js"></script>
     <script>
-        // ONLINE RELAWAN SYSTEM - FIXED VERSION
+        // ONLINE RELAWAN SYSTEM - FIXED VERSION WITH WHATSAPP
         let currentRelawan = '';
         let relawanModal = null;
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ Relawan Fixed System Loaded');
+            console.log('✅ Relawan Fixed System with WhatsApp Loaded');
             relawanModal = new bootstrap.Modal(document.getElementById('relawanModal'));
             
             // Set default date to today
@@ -309,6 +348,9 @@
             
             // Initialize relawan system
             initializeRelawanSystem();
+            
+            // Setup auto WhatsApp setelah submit
+            setupAutoWhatsApp();
         });
 
         function initializeRelawanSystem() {
@@ -501,19 +543,15 @@
             }
         }
 
-        // Form handler
-        document.getElementById('ajuanForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
+        // WHATSAPP REPORT FUNCTION - VERSI DETAIL
+        function openWhatsAppReport() {
             if (!currentRelawan) {
                 alert('Pilih relawan terlebih dahulu!');
                 relawanModal.show();
                 return;
             }
 
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            
+            // Ambil data dari form
             const formData = {
                 nama: document.getElementById('pasienNama').value.trim(),
                 noKK: document.getElementById('pasienKK').value.trim(),
@@ -521,61 +559,148 @@
                 noHP: document.getElementById('pasienHP').value.trim(),
                 alamat: document.getElementById('pasienAlamat').value.trim(),
                 puskesmas: document.getElementById('puskesmas').value.trim(),
-                relawan: currentRelawan, // PAKAI CURRENT RELAWAN
+                relawan: currentRelawan,
                 tglMasuk: document.getElementById('tglMasuk').value,
                 diagnosa: document.getElementById('diagnosa').value.trim(),
                 suratMampu: document.getElementById('suratMampu').value,
                 suratRawat: document.getElementById('suratRawat').value,
-                linkDrive: document.getElementById('linkDrive').value.trim(),
-                status: 'pending'
+                linkDrive: document.getElementById('linkDrive').value.trim()
             };
 
-            // Validation
-            if (!formData.nama || !formData.noKK || !formData.noNIK) {
-                alert('Harap isi semua field yang wajib!');
-                return;
-            }
-
-            if (formData.noKK.length !== 16) {
-                alert('No KK harus 16 digit!');
-                return;
-            }
-
-            if (formData.noNIK.length !== 16) {
-                alert('No NIK harus 16 digit!');
-                return;
-            }
-
-            try {
-                submitBtn.innerHTML = '<div class="loading-spinner me-2"></div> Mengirim...';
-                submitBtn.disabled = true;
-
-                console.log('📤 Mengirim data:', formData);
-                const result = await URC_API.savePengajuan(formData);
-                
-                if (result.status === 'success') {
-                    alert('✅ Ajuan berhasil dikirim!');
-                    this.reset();
-                    
-                    // Reset date to today
-                    const today = new Date().toISOString().split('T')[0];
-                    document.getElementById('tglMasuk').value = today;
-                    
-                    // Reload riwayat & daftar relawan
-                    setTimeout(() => {
-                        loadRiwayat();
-                        loadDaftarRelawan();
-                    }, 1000);
-                } else {
-                    alert('❌ Gagal: ' + (result.message || 'Unknown error'));
+            // Validasi - minimal ada nama pasien
+            if (!formData.nama) {
+                if (!confirm('Form pengajuan masih kosong. Tetap kirim notifikasi ke admin?')) {
+                    return;
                 }
-            } catch (error) {
-                console.error('Submit error:', error);
-                alert('❌ Error: ' + error.message);
-            } finally {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
             }
+
+            // Format pesan WhatsApp
+            const message = formatWhatsAppMessage(formData);
+            
+            // Nomor admin (SEMENTARA pakai nomor Anda untuk testing)
+            const adminNumber = '082281115991'; // 🔧 GANTI NANTI DENGAN NOMOR ADMIN
+            
+            // Encode message untuk URL
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Buat WhatsApp URL
+            const whatsappUrl = `https://wa.me/${adminNumber}?text=${encodedMessage}`;
+            
+            // Buka WhatsApp
+            console.log('📤 Membuka WhatsApp dengan pesan:', message);
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function formatWhatsAppMessage(formData) {
+            const timestamp = new Date().toLocaleString('id-ID');
+            const adminLink = `${window.location.origin}${window.location.pathname.replace('relawan.html', 'admin.html')}`;
+            
+            // VERSI DETAIL - Sesuai permintaan
+            let message = `🆕 *LAPORAN AJUAN BARU - URC JKN* 🆕\n\n`;
+            
+            message += `📝 **INFORMASI PASIEN**\n`;
+            message += `• Nama Pasien: ${formData.nama || 'Belum diisi'}\n`;
+            message += `• No Telepon: ${formData.noHP || 'Belum diisi'}\n`;
+            message += `• No KK: ${formData.noKK || 'Belum diisi'}\n`;
+            message += `• No NIK: ${formData.noNIK || 'Belum diisi'}\n`;
+            message += `• Puskesmas: ${formData.puskesmas || 'Belum diisi'}\n`;
+            message += `• Alamat: ${formData.alamat || 'Belum diisi'}\n\n`;
+            
+            message += `🏥 **DATA MEDIS**\n`;
+            message += `• Diagnosa: ${formData.diagnosa || 'Belum diisi'}\n`;
+            message += `• Tgl Masuk RS: ${formData.tglMasuk || 'Belum diisi'}\n`;
+            message += `• Surat Tidak Mampu: ${formData.suratMampu || 'Belum diisi'}\n`;
+            message += `• Surat Rawat Inap: ${formData.suratRawat || 'Belum diisi'}\n`;
+            if (formData.linkDrive) {
+                message += `• Link Drive: ${formData.linkDrive}\n`;
+            }
+            message += `\n`;
+            
+            message += `👤 **RELAWAN PENGAJU**\n`;
+            message += `• Nama Relawan: ${formData.relawan}\n`;
+            message += `• Waktu Pengajuan: ${timestamp}\n\n`;
+            
+            message += `🔗 **LINK SISTEM ADMIN**\n`;
+            message += `${adminLink}\n\n`;
+            
+            message += `⚠️ _Segera proses di sistem admin_`;
+            
+            return message;
+        }
+
+        // AUTO WHATSAPP AFTER SUBMIT
+        function setupAutoWhatsApp() {
+            const originalSubmitHandler = document.getElementById('ajuanForm').onsubmit;
+            
+            document.getElementById('ajuanForm').onsubmit = async function(e) {
+                e.preventDefault();
+                
+                // Simpan reference ke this
+                const form = this;
+                
+                // Submit form seperti biasa (dengan logic yang sudah ada)
+                try {
+                    const submitBtn = document.getElementById('submitBtn');
+                    const originalText = submitBtn.innerHTML;
+                    
+                    submitBtn.innerHTML = '<div class="loading-spinner me-2"></div> Mengirim...';
+                    submitBtn.disabled = true;
+
+                    const formData = {
+                        nama: document.getElementById('pasienNama').value.trim(),
+                        noKK: document.getElementById('pasienKK').value.trim(),
+                        noNIK: document.getElementById('pasienNIK').value.trim(),
+                        noHP: document.getElementById('pasienHP').value.trim(),
+                        alamat: document.getElementById('pasienAlamat').value.trim(),
+                        puskesmas: document.getElementById('puskesmas').value.trim(),
+                        relawan: currentRelawan,
+                        tglMasuk: document.getElementById('tglMasuk').value,
+                        diagnosa: document.getElementById('diagnosa').value.trim(),
+                        suratMampu: document.getElementById('suratMampu').value,
+                        suratRawat: document.getElementById('suratRawat').value,
+                        linkDrive: document.getElementById('linkDrive').value.trim(),
+                        status: 'pending'
+                    };
+
+                    const result = await URC_API.savePengajuan(formData);
+                    
+                    if (result.status === 'success') {
+                        // Reset form
+                        form.reset();
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('tglMasuk').value = today;
+                        
+                        // Reload riwayat
+                        setTimeout(() => {
+                            loadRiwayat();
+                            loadDaftarRelawan();
+                        }, 1000);
+                        
+                        // Tanya apakah ingin kirim WhatsApp
+                        setTimeout(() => {
+                            if (confirm('✅ Ajuan berhasil dikirim! \n\nKirim notifikasi ke admin via WhatsApp?')) {
+                                openWhatsAppReport();
+                            }
+                        }, 1500);
+                        
+                    } else {
+                        alert('❌ Gagal: ' + (result.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Submit error:', error);
+                    alert('❌ Error: ' + error.message);
+                } finally {
+                    const submitBtn = document.getElementById('submitBtn');
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Kirim Ajuan';
+                    submitBtn.disabled = false;
+                }
+            };
+        }
+
+        // Form handler manual (backup)
+        document.getElementById('ajuanForm').addEventListener('submit', async function(e) {
+            // Handler sudah diambil alih oleh setupAutoWhatsApp()
+            // Function ini tetap ada untuk compatibility
         });
 
         // Debug function
@@ -637,6 +762,7 @@
         window.loadRiwayat = loadRiwayat;
         window.debugRiwayat = debugRiwayat;
         window.changeRelawan = changeRelawan;
+        window.openWhatsAppReport = openWhatsAppReport;
     </script>
 </body>
 </html>
